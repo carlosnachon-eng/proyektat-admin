@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import { generarCotizacionPDF } from '@/lib/generarCotizacionPDF'
 
 const AREAS = ['Fotografía', 'Video', 'Eventos', 'Transmisiones', 'Circuito Cerrado', 'Marketing', 'Audio']
 
@@ -27,9 +28,7 @@ const empty = {
   descripcion: '', monto_total: '', anticipo: '', fecha_evento: '', estatus: 'borrador', notas: ''
 }
 
-function getPadded(n) {
-  return String(n).padStart(4, '0')
-}
+function getPadded(n) { return String(n).padStart(4, '0') }
 
 export default function CotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState([])
@@ -44,17 +43,11 @@ export default function CotizacionesPage() {
   const [clienteSearch, setClienteSearch] = useState('')
   const [showClienteDropdown, setShowClienteDropdown] = useState(false)
 
-  useEffect(() => {
-    fetchCotizaciones()
-    fetchClientes()
-  }, [])
+  useEffect(() => { fetchCotizaciones(); fetchClientes() }, [])
 
   const fetchCotizaciones = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('cotizaciones')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('cotizaciones').select('*').order('created_at', { ascending: false })
     setCotizaciones(data || [])
     setLoading(false)
   }
@@ -64,22 +57,11 @@ export default function CotizacionesPage() {
     setClientes(data || [])
   }
 
-  const nextFolio = () => {
-    const n = cotizaciones.length + 1
-    return `COT-${new Date().getFullYear()}-${getPadded(n)}`
-  }
+  const nextFolio = () => `COT-${new Date().getFullYear()}-${getPadded(cotizaciones.length + 1)}`
 
   const toggleServicio = (s) => {
     const current = form.servicios || []
-    if (current.includes(s)) {
-      setForm({ ...form, servicios: current.filter(x => x !== s) })
-    } else {
-      setForm({ ...form, servicios: [...current, s] })
-    }
-  }
-
-  const handleAreaChange = (area) => {
-    setForm({ ...form, area, servicios: [] })
+    setForm({ ...form, servicios: current.includes(s) ? current.filter(x => x !== s) : [...current, s] })
   }
 
   const calcLiquidacion = () => {
@@ -112,16 +94,10 @@ export default function CotizacionesPage() {
 
   const handleEdit = (c) => {
     setForm({
-      cliente_id: c.cliente_id || '',
-      cliente_nombre: c.cliente_nombre || '',
-      area: c.area,
-      servicios: c.servicios || [],
-      descripcion: c.descripcion || '',
-      monto_total: c.monto_total || '',
-      anticipo: c.anticipo || '',
-      fecha_evento: c.fecha_evento || '',
-      estatus: c.estatus,
-      notas: c.notas || '',
+      cliente_id: c.cliente_id || '', cliente_nombre: c.cliente_nombre || '',
+      area: c.area, servicios: c.servicios || [], descripcion: c.descripcion || '',
+      monto_total: c.monto_total || '', anticipo: c.anticipo || '',
+      fecha_evento: c.fecha_evento || '', estatus: c.estatus, notas: c.notas || '',
     })
     setClienteSearch(c.cliente_nombre || '')
     setEditing(c.id)
@@ -129,12 +105,7 @@ export default function CotizacionesPage() {
     setShowForm(true)
   }
 
-  const handleCancel = () => {
-    setShowForm(false)
-    setEditing(null)
-    setForm(empty)
-    setClienteSearch('')
-  }
+  const handleCancel = () => { setShowForm(false); setEditing(null); setForm(empty); setClienteSearch('') }
 
   const handleSelectCliente = (c) => {
     setForm({ ...form, cliente_id: c.id, cliente_nombre: c.nombre })
@@ -155,29 +126,21 @@ export default function CotizacionesPage() {
 
   return (
     <div className="p-8">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Cotizaciones</h1>
           <p className="text-gray-400 text-sm mt-1">{cotizaciones.length} cotizaciones registradas</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setEditing(null); setForm(empty); setClienteSearch('') }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-semibold transition"
-        >
+        <button onClick={() => { setShowForm(true); setEditing(null); setForm(empty); setClienteSearch('') }}
+          className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-semibold transition">
           <span>+</span> Nueva cotización
         </button>
       </div>
 
-      {/* Search */}
       <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Buscar por folio, cliente o área..."
-          value={search}
+        <input type="text" placeholder="Buscar por folio, cliente o área..." value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full max-w-md px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 text-sm"
-        />
+          className="w-full max-w-md px-4 py-2.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 text-sm" />
       </div>
 
       {/* Form Modal */}
@@ -188,17 +151,13 @@ export default function CotizacionesPage() {
               {editing ? 'Editar cotización' : `Nueva cotización · ${nextFolio()}`}
             </h2>
             <div className="space-y-4">
-
-              {/* Cliente */}
               <div className="relative">
                 <label className="text-xs text-gray-400 mb-1 block">Cliente</label>
-                <input
-                  value={clienteSearch}
+                <input value={clienteSearch}
                   onChange={e => { setClienteSearch(e.target.value); setForm({ ...form, cliente_nombre: e.target.value, cliente_id: '' }); setShowClienteDropdown(true) }}
                   onFocus={() => setShowClienteDropdown(true)}
                   className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500"
-                  placeholder="Buscar cliente registrado o escribir nombre..."
-                />
+                  placeholder="Buscar cliente registrado o escribir nombre..." />
                 {showClienteDropdown && clienteSearch && clientesFiltrados.length > 0 && (
                   <div className="absolute top-full left-0 right-0 bg-[#252525] border border-[#333] rounded-xl mt-1 z-10 max-h-40 overflow-y-auto">
                     {clientesFiltrados.map(c => (
@@ -212,12 +171,11 @@ export default function CotizacionesPage() {
                 )}
               </div>
 
-              {/* Area */}
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Área de servicio</label>
                 <div className="flex flex-wrap gap-2">
                   {AREAS.map(a => (
-                    <button key={a} onClick={() => handleAreaChange(a)}
+                    <button key={a} onClick={() => setForm({ ...form, area: a, servicios: [] })}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${form.area === a ? 'bg-brand-600 text-white' : 'bg-[#252525] text-gray-400 hover:bg-[#2a2a2a]'}`}>
                       {a}
                     </button>
@@ -225,7 +183,6 @@ export default function CotizacionesPage() {
                 </div>
               </div>
 
-              {/* Servicios */}
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Servicios incluidos</label>
                 <div className="flex flex-wrap gap-2">
@@ -238,31 +195,23 @@ export default function CotizacionesPage() {
                 </div>
               </div>
 
-              {/* Descripcion */}
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Descripción del servicio</label>
-                <textarea
-                  value={form.descripcion}
-                  onChange={e => setForm({ ...form, descripcion: e.target.value })}
-                  rows={2}
+                <textarea value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} rows={2}
                   className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500 resize-none"
-                  placeholder="Detalles del servicio..."
-                />
+                  placeholder="Detalles del servicio..." />
               </div>
 
-              {/* Montos y fecha */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Monto total $</label>
                   <input type="number" value={form.monto_total} onChange={e => setForm({ ...form, monto_total: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500"
-                    placeholder="0.00" />
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500" placeholder="0.00" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Anticipo $</label>
                   <input type="number" value={form.anticipo} onChange={e => setForm({ ...form, anticipo: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500"
-                    placeholder="0.00" />
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500" placeholder="0.00" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Liquidación $</label>
@@ -290,17 +239,14 @@ export default function CotizacionesPage() {
 
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Notas internas</label>
-                <textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })}
-                  rows={2}
+                <textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} rows={2}
                   className="w-full px-3 py-2.5 rounded-xl bg-[#252525] border border-[#333] text-white text-sm focus:outline-none focus:border-brand-500 resize-none"
                   placeholder="Notas internas..." />
               </div>
             </div>
 
             <div className="flex gap-3 mt-6">
-              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-xl border border-[#333] text-gray-400 text-sm hover:bg-[#252525] transition">
-                Cancelar
-              </button>
+              <button onClick={handleCancel} className="flex-1 py-2.5 rounded-xl border border-[#333] text-gray-400 text-sm hover:bg-[#252525] transition">Cancelar</button>
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition disabled:opacity-50">
                 {saving ? 'Guardando...' : editing ? 'Guardar cambios' : 'Crear cotización'}
@@ -324,6 +270,7 @@ export default function CotizacionesPage() {
                 {selected.estatus}
               </span>
             </div>
+
             {selected.servicios?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {selected.servicios.map(s => (
@@ -331,6 +278,7 @@ export default function CotizacionesPage() {
                 ))}
               </div>
             )}
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between py-2 border-b border-[#222]">
                 <span className="text-gray-500">Total</span>
@@ -353,16 +301,17 @@ export default function CotizacionesPage() {
               {selected.descripcion && (
                 <div className="py-2">
                   <p className="text-gray-500 mb-1">Descripción</p>
-                  <p className="text-gray-300">{selected.descripcion}</p>
+                  <p className="text-gray-300 text-xs">{selected.descripcion}</p>
                 </div>
               )}
             </div>
+
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setSelected(null)} className="flex-1 py-2.5 rounded-xl border border-[#333] text-gray-400 text-sm hover:bg-[#252525] transition">
-                Cerrar
-              </button>
-              <button onClick={() => handleEdit(selected)} className="flex-1 py-2.5 rounded-xl bg-[#252525] text-white text-sm hover:bg-[#2a2a2a] transition">
-                ✏️ Editar
+              <button onClick={() => setSelected(null)} className="py-2.5 px-4 rounded-xl border border-[#333] text-gray-400 text-sm hover:bg-[#252525] transition">Cerrar</button>
+              <button onClick={() => handleEdit(selected)} className="py-2.5 px-4 rounded-xl bg-[#252525] text-white text-sm hover:bg-[#2a2a2a] transition">✏️ Editar</button>
+              <button onClick={() => generarCotizacionPDF(selected)}
+                className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition flex items-center justify-center gap-2">
+                📄 Descargar PDF
               </button>
             </div>
           </div>
@@ -392,14 +341,12 @@ export default function CotizacionesPage() {
                     <p className="text-white font-medium text-sm">{c.cliente_nombre || 'Sin cliente'}</p>
                     <span className="text-gray-600 text-xs font-mono">{c.folio}</span>
                   </div>
-                  <p className="text-gray-500 text-xs">{c.area} {c.fecha_evento ? `· ${new Date(c.fecha_evento + 'T12:00:00').toLocaleDateString('es-MX')}` : ''}</p>
+                  <p className="text-gray-500 text-xs">{c.area}{c.fecha_evento ? ` · ${new Date(c.fecha_evento + 'T12:00:00').toLocaleDateString('es-MX')}` : ''}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-white text-sm font-semibold">${Number(c.monto_total).toLocaleString('es-MX', {minimumFractionDigits:2})}</span>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${ESTATUS_COLORS[c.estatus]}`}>
-                  {c.estatus}
-                </span>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${ESTATUS_COLORS[c.estatus]}`}>{c.estatus}</span>
               </div>
             </div>
           ))}
